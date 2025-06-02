@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { sendToGoogleSheets } from '@/utils/googleSheets';
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
@@ -11,18 +11,41 @@ const ContactSection = () => {
     email: '',
     subject: ''
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ID da planilha (configurável)
+  const spreadsheetId = "1V7q1-JYXX77BrVAWKKzHpuhROvH3n8P1digIxv2lmp4";
 
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent("Olá! Gostaria de saber mais sobre a oportunidade de trabalhar com a Hinode!");
     window.open(`https://wa.me/5511999999999?text=${message}`, '_blank');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de envio - aqui seria integrado com Google Sheets
-    console.log('Dados do formulário:', formData);
-    alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
-    setFormData({ name: '', phone: '', email: '', subject: '' });
+    setIsSubmitting(true);
+
+    try {
+      console.log('📝 Enviando dados do formulário para Google Sheets...');
+      
+      // Envia dados para Google Sheets usando a função utilitária
+      const success = await sendToGoogleSheets(formData, spreadsheetId);
+      
+      if (success) {
+        alert('✅ Mensagem enviada com sucesso! Seus dados foram registrados e entraremos em contato em breve.');
+        // Limpa o formulário após envio bem-sucedido
+        setFormData({ name: '', phone: '', email: '', subject: '' });
+      } else {
+        throw new Error('Falha no envio');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao enviar formulário:', error);
+      alert('❌ Erro ao enviar mensagem. Por favor, tente novamente ou entre em contato via WhatsApp.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -33,7 +56,7 @@ const ContactSection = () => {
   };
 
   return (
-    <section className="py-12 md:py-16 lg:py-20 bg-hinode-white px-4 md:px-6 lg:px-8">
+    <section className="py-12 md:py-16 lg:py-20 bg-hinode-white px-6 md:px-8 lg:px-12">
       <div className="container mx-auto max-w-7xl">
         <div className="text-center mb-8 md:mb-12 lg:mb-16 animate-fade-in">
           <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-hinode-navy mb-4 md:mb-6">
@@ -67,6 +90,7 @@ const ContactSection = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               
@@ -79,6 +103,7 @@ const ContactSection = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -92,6 +117,7 @@ const ContactSection = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
                 required
+                disabled={isSubmitting}
               />
             </div>
             
@@ -104,14 +130,26 @@ const ContactSection = () => {
                 className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent resize-none text-base"
                 rows={5}
                 required
+                disabled={isSubmitting}
               />
             </div>
             
             <Button 
               type="submit"
-              className="w-full bg-hinode-primary hover:bg-hinode-primary/90 text-hinode-navy font-bold py-3 md:py-4 px-6 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-base md:text-lg"
+              disabled={isSubmitting}
+              className="w-full bg-hinode-primary hover:bg-hinode-primary/90 text-hinode-navy font-bold py-3 md:py-4 px-6 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Enviar Mensagem
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-hinode-navy" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Enviando...
+                </>
+              ) : (
+                'Enviar Mensagem'
+              )}
             </Button>
           </form>
         </div>
