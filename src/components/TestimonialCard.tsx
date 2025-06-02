@@ -2,24 +2,34 @@
 interface TestimonialCardProps {
   name: string;
   text: string;
-  avatar: string;
+  image: string;
 }
 
-const TestimonialCard = ({ name, text, avatar }: TestimonialCardProps) => {
+const TestimonialCard = ({ name, text, image }: TestimonialCardProps) => {
   return (
-    <div className="bg-hinode-light p-6 rounded-lg border border-hinode-secondary/20 hover:shadow-lg transition-all duration-300 animate-zoom-in">
+    <div className="bg-gradient-to-br from-hinode-primary/5 to-hinode-secondary/5 p-8 rounded-2xl border border-hinode-primary/20 hover:shadow-2xl transition-all duration-300 animate-zoom-in hover:scale-105">
       <div className="text-center">
-        <div className="w-16 h-16 bg-hinode-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-2xl">{avatar}</span>
+        <div className="mb-6">
+          <img 
+            src={image} 
+            alt={name}
+            className="w-20 h-20 rounded-full mx-auto object-cover border-4 border-hinode-primary/20 shadow-lg"
+          />
         </div>
         
-        <h3 className="text-lg font-semibold text-hinode-dark mb-3">
+        <h3 className="text-xl font-bold text-hinode-navy mb-4">
           {name}
         </h3>
         
-        <p className="text-hinode-secondary italic">
+        <p className="text-hinode-dark italic mb-4 text-lg leading-relaxed">
           "{text}"
         </p>
+        
+        <div className="flex justify-center">
+          {[...Array(5)].map((_, i) => (
+            <span key={i} className="text-hinode-primary text-lg">⭐</span>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -65,16 +65,12 @@ export default {
 				},
 				// Cores oficiais da Hinode
 				hinode: {
-					primary: '#d43900',
-					secondary: '#6c757d',
-					success: '#198754',
-					info: '#0dcaf0',
-					warning: '#ffc107',
-					danger: '#dc3545',
-					light: '#f8f9fa',
-					dark: '#212529',
-					white: '#ffffff',
-					black: '#000000'
+					primary: '#FFCC00', // Amarelo Dourado
+					secondary: '#A57FC7', // Lilás
+					navy: '#002147', // Azul-marinho
+					white: '#FFFFFF', // Branco
+					dark: '#1a1a1a', // Texto escuro
+					success: '#25D366', // Verde WhatsApp
 				}
 			},
 			borderRadius: {
@@ -118,13 +114,22 @@ export default {
 						opacity: '1',
 						transform: 'scale(1)'
 					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0px)'
+					},
+					'50%': {
+						transform: 'translateY(-10px)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.6s ease-out',
-				'zoom-in': 'zoom-in 0.5s ease-out'
+				'zoom-in': 'zoom-in 0.5s ease-out',
+				'float': 'float 3s ease-in-out infinite'
 			}
 		}
 	},
