@@ -9,7 +9,6 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-hinode-primary/10 to-hinode-navy/90 px-6 md:px-8 lg:px-12">
-      {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-20"
         style={{
@@ -17,15 +16,12 @@ const HeroSection = () => {
         }}
       />
       
-      {/* Content */}
       <div className="relative z-10 text-center max-w-6xl mx-auto py-8 md:py-12 lg:py-16 w-full">
-        {/* Title */}
-        <h1 className="text-2xl md:text-4xl lg:text-6xl xl:text-7xl font-bold text-hinode-white mb-6 md:mb-8 leading-tight animate-fade-in">
+        <h1 className="text-xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-hinode-white mb-6 md:mb-8 leading-tight animate-fade-in">
           💎 Desperte Seu Potencial: <br />
           <span className="text-hinode-primary">Viva de Perfumes Hinode!</span>
         </h1>
         
-        {/* Video Section */}
         <div className="mb-6 md:mb-8 lg:mb-10 animate-zoom-in">
           <div className="relative w-full max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto aspect-video rounded-xl md:rounded-2xl overflow-hidden shadow-2xl border-2 md:border-4 border-hinode-primary/50">
             <div className="absolute inset-0 bg-gradient-to-br from-hinode-primary/20 to-hinode-secondary/20 flex items-center justify-center">
@@ -42,8 +38,7 @@ const HeroSection = () => {
           </div>
         </div>
         
-        {/* Subtitle and CTA */}
-        <p className="text-base md:text-lg lg:text-xl xl:text-2xl text-hinode-white/90 mb-6 md:mb-8 max-w-2xl md:max-w-3xl mx-auto animate-fade-in leading-relaxed">
+        <p className="text-sm md:text-base lg:text-lg text-hinode-white/90 mb-6 md:mb-8 max-w-2xl md:max-w-3xl mx-auto animate-fade-in leading-relaxed">
           Transforme seu futuro e alcance sua liberdade financeira vendendo Hinode.
         </p>
         
