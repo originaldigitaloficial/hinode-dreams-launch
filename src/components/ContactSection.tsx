@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ const ContactSection = () => {
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // ID da planilha (configurável)
   const spreadsheetId = "1V7q1-JYXX77BrVAWKKzHpuhROvH3n8P1digIxv2lmp4";
@@ -25,24 +27,34 @@ const ContactSection = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitStatus('idle');
 
     try {
       console.log('📝 Enviando dados do formulário para Google Sheets...');
+      console.log('📊 Dados do formulário:', formData);
       
-      // Envia dados para Google Sheets usando a função utilitária
-      const success = await sendToGoogleSheets(formData, spreadsheetId);
+      // Envia dados para Google Sheets usando a função utilitária corrigida
+      const success = await sendToGoogleSheets(formData, spreadsheetId, 'Página1');
       
       if (success) {
+        console.log('✅ Dados enviados com sucesso!');
+        setSubmitStatus('success');
+        
+        // Mostra mensagem de sucesso
         alert('✅ Mensagem enviada com sucesso! Seus dados foram registrados e entraremos em contato em breve.');
+        
         // Limpa o formulário após envio bem-sucedido
         setFormData({ name: '', phone: '', email: '', subject: '' });
       } else {
-        throw new Error('Falha no envio');
+        throw new Error('Falha no envio para Google Sheets');
       }
       
     } catch (error) {
       console.error('❌ Erro ao enviar formulário:', error);
-      alert('❌ Erro ao enviar mensagem. Por favor, tente novamente ou entre em contato via WhatsApp.');
+      setSubmitStatus('error');
+      
+      // Mostra mensagem de erro mais específica
+      alert('❌ Erro ao enviar mensagem. Por favor, verifique sua conexão e tente novamente. Se o problema persistir, entre em contato via WhatsApp.');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +91,19 @@ const ContactSection = () => {
         </div>
         
         <div className="max-w-2xl mx-auto">
+          {/* Feedback visual do status do envio */}
+          {submitStatus === 'success' && (
+            <div className="mb-4 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg">
+              ✅ Formulário enviado com sucesso! Entraremos em contato em breve.
+            </div>
+          )}
+          
+          {submitStatus === 'error' && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+              ❌ Erro ao enviar formulário. Tente novamente ou entre em contato via WhatsApp.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 animate-zoom-in">
             <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
               <div>

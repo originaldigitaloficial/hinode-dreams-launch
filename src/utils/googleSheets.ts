@@ -22,6 +22,9 @@ const GOOGLE_SHEETS_CONFIG = {
 // ID da planilha (configurável)
 const DEFAULT_SPREADSHEET_ID = "1V7q1-JYXX77BrVAWKKzHpuhROvH3n8P1digIxv2lmp4";
 
+// Nome da aba padrão da planilha
+const DEFAULT_SHEET_NAME = "Página1";
+
 // Interface para os dados do formulário
 interface FormData {
   name: string;
@@ -35,6 +38,8 @@ interface FormData {
  * Necessário para autenticar usando Service Account
  */
 async function generateJWT(): Promise<string> {
+  console.log('🔑 Gerando JWT para autenticação...');
+  
   const header = {
     alg: 'RS256',
     typ: 'JWT'
@@ -79,6 +84,7 @@ async function generateJWT(): Promise<string> {
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 
+  console.log('✅ JWT gerado com sucesso');
   return `${unsignedToken}.${encodedSignature}`;
 }
 
@@ -106,6 +112,8 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
  * Necessário para fazer chamadas autenticadas à API do Google Sheets
  */
 async function getAccessToken(): Promise<string> {
+  console.log('🚀 Obtendo access token...');
+  
   const jwt = await generateJWT();
   
   const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -120,10 +128,13 @@ async function getAccessToken(): Promise<string> {
   });
 
   if (!response.ok) {
+    const errorData = await response.json();
+    console.error('❌ Erro na autenticação:', errorData);
     throw new Error('Falha na autenticação com Google API');
   }
 
   const data = await response.json();
+  console.log('✅ Access token obtido com sucesso');
   return data.access_token;
 }
 
@@ -131,57 +142,74 @@ async function getAccessToken(): Promise<string> {
  * Envia dados do formulário para Google Sheets
  * @param formData - Dados do formulário (nome, telefone, email, assunto)
  * @param spreadsheetId - ID da planilha (opcional, usa o padrão se não fornecido)
+ * @param sheetName - Nome da aba da planilha (opcional, usa 'Página1' como padrão)
  * @returns Promise<boolean> - true se envio foi bem-sucedido
  */
 export async function sendToGoogleSheets(
   formData: FormData, 
-  spreadsheetId: string = DEFAULT_SPREADSHEET_ID
+  spreadsheetId: string = DEFAULT_SPREADSHEET_ID,
+  sheetName: string = DEFAULT_SHEET_NAME
 ): Promise<boolean> {
   try {
     console.log('🚀 Iniciando envio para Google Sheets...', formData);
+    console.log('📋 Planilha ID:', spreadsheetId);
+    console.log('📄 Aba:', sheetName);
     
     // 1. Obter access token para autenticação
     const accessToken = await getAccessToken();
-    console.log('✅ Token de acesso obtido com sucesso');
 
     // 2. Preparar dados para envio
-    // Adiciona timestamp e organiza os dados em formato de linha
+    // Adiciona timestamp e organiza os dados em formato de linha (matriz bidimensional)
     const timestamp = new Date().toLocaleString('pt-BR');
     const rowData = [
       [timestamp, formData.name, formData.phone, formData.email, formData.subject]
     ];
 
-    // 3. Configurar URL da API do Google Sheets
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1:append`;
+    console.log('📊 Dados formatados para envio:', rowData);
+
+    // 3. Configurar URL da API do Google Sheets com range correto
+    // Usa o formato 'NomeAba!A1:append' para adicionar ao final da planilha
+    const range = `${sheetName}!A1:append`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
     
-    // 4. Fazer requisição para adicionar dados à planilha
+    console.log('🔗 URL da API:', url);
+    console.log('📍 Range:', range);
+
+    // 4. Preparar body da requisição no formato correto
+    const requestBody = {
+      values: rowData
+    };
+
+    console.log('📦 Request Body:', JSON.stringify(requestBody, null, 2));
+    
+    // 5. Fazer requisição para adicionar dados à planilha
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        range: 'A1', // Começa na célula A1
-        majorDimension: 'ROWS', // Dados organizados em linhas
-        values: rowData,
-        valueInputOption: 'RAW' // Insere dados como texto bruto
-      }),
+      body: JSON.stringify(requestBody),
     });
+
+    console.log('📡 Status da resposta:', response.status);
+    console.log('📡 Status text:', response.statusText);
 
     if (!response.ok) {
       const errorData = await response.json();
       console.error('❌ Erro na resposta da API:', errorData);
-      throw new Error(`Erro ao enviar dados: ${response.status}`);
+      console.error('❌ Headers da resposta:', response.headers);
+      throw new Error(`Erro ao enviar dados: ${response.status} - ${response.statusText}`);
     }
 
     const result = await response.json();
     console.log('✅ Dados enviados com sucesso para Google Sheets:', result);
+    console.log('📊 Resposta completa da API:', JSON.stringify(result, null, 2));
     
     return true;
 
   } catch (error) {
-    console.error('❌ Erro ao enviar dados para Google Sheets:', error);
+    console.error('❌ Erro detalhado ao enviar dados para Google Sheets:', error);
     return false;
   }
 }
@@ -194,6 +222,8 @@ export async function testGoogleSheetsConnection(
   spreadsheetId: string = DEFAULT_SPREADSHEET_ID
 ): Promise<boolean> {
   try {
+    console.log('🧪 Testando conexão com Google Sheets...');
+    
     const accessToken = await getAccessToken();
     
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
@@ -203,9 +233,19 @@ export async function testGoogleSheetsConnection(
       },
     });
 
-    return response.ok;
+    console.log('🧪 Status do teste:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Conexão bem-sucedida:', data.properties?.title);
+      return true;
+    } else {
+      const errorData = await response.json();
+      console.error('❌ Erro no teste:', errorData);
+      return false;
+    }
   } catch (error) {
-    console.error('Erro ao testar conexão:', error);
+    console.error('❌ Erro ao testar conexão:', error);
     return false;
   }
 }
