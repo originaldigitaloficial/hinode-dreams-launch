@@ -16,7 +16,6 @@ const SERVICE_ACCOUNT_CREDENTIALS = {
 
 /**
  * Função para criar um JWT (JSON Web Token) para autenticação com Google API
- * Utiliza as credenciais da Service Account para gerar token de acesso
  */
 async function createJWT(): Promise<string> {
   const header = {
@@ -78,7 +77,6 @@ function str2ab(str: string): ArrayBuffer {
 
 /**
  * Função para obter token de acesso usando o JWT
- * Faz a troca do JWT por um access token válido
  */
 async function getAccessToken(): Promise<string> {
   try {
@@ -96,7 +94,8 @@ async function getAccessToken(): Promise<string> {
     });
 
     if (!response.ok) {
-      throw new Error(`Erro na autenticação: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Erro na autenticação: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
@@ -108,10 +107,6 @@ async function getAccessToken(): Promise<string> {
 
 /**
  * Função principal para enviar dados do formulário para Google Sheets
- * @param formData - Dados do formulário (nome, telefone, email, assunto)
- * @param spreadsheetId - ID da planilha do Google Sheets
- * @param sheetName - Nome da aba da planilha (padrão: 'Página1')
- * @returns Promise<boolean> - true se sucesso, false se falha
  */
 export async function sendToGoogleSheets(
   formData: { name: string; phone: string; email: string; subject: string },
@@ -119,24 +114,29 @@ export async function sendToGoogleSheets(
   sheetName: string = 'Página1'
 ): Promise<boolean> {
   try {
+    // Validar dados obrigatórios
+    if (!formData.name || !formData.phone || !formData.email || !formData.subject) {
+      throw new Error('Todos os campos são obrigatórios');
+    }
+
     // Obter token de acesso
     const accessToken = await getAccessToken();
     
-    // Preparar dados para envio (formato de matriz bidimensional)
+    // Preparar dados para envio
     const values = [[
-      formData.name,
-      formData.phone,
-      formData.email,
-      formData.subject,
-      new Date().toLocaleString('pt-BR') // Adiciona timestamp
+      formData.name.toString(),
+      formData.phone.toString(),
+      formData.email.toString(),
+      formData.subject.toString(),
+      new Date().toLocaleString('pt-BR')
     ]];
 
-    // Configurar range da planilha (modo append)
-    const range = `${sheetName}!A1:append`;
+    // Usar range simples para append
+    const range = `${sheetName}!A:E`;
     
     // Fazer requisição para Google Sheets API
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         headers: {
@@ -144,16 +144,20 @@ export async function sendToGoogleSheets(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          range: range,
+          majorDimension: 'ROWS',
           values: values
         }),
       }
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Erro ${response.status}: ${JSON.stringify(errorData)}`);
+      const errorData = await response.text();
+      throw new Error(`Erro ${response.status}: ${errorData}`);
     }
 
+    const result = await response.json();
+    
     return true;
   } catch (error) {
     return false;
