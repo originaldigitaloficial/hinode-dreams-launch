@@ -30,18 +30,11 @@ const ContactSection = () => {
     setSubmitStatus('idle');
 
     try {
-      console.log('📝 Enviando dados do formulário para Google Sheets...');
-      console.log('📊 Dados do formulário:', formData);
-      
       // Envia dados para Google Sheets usando a função utilitária corrigida
       const success = await sendToGoogleSheets(formData, spreadsheetId, 'Página1');
       
       if (success) {
-        console.log('✅ Dados enviados com sucesso!');
         setSubmitStatus('success');
-        
-        // Mostra mensagem de sucesso
-        alert('✅ Mensagem enviada com sucesso! Seus dados foram registrados e entraremos em contato em breve.');
         
         // Limpa o formulário após envio bem-sucedido
         setFormData({ name: '', phone: '', email: '', subject: '' });
@@ -50,11 +43,7 @@ const ContactSection = () => {
       }
       
     } catch (error) {
-      console.error('❌ Erro ao enviar formulário:', error);
       setSubmitStatus('error');
-      
-      // Mostra mensagem de erro mais específica
-      alert('❌ Erro ao enviar mensagem. Por favor, verifique sua conexão e tente novamente. Se o problema persistir, entre em contato via WhatsApp.');
     } finally {
       setIsSubmitting(false);
     }
@@ -91,27 +80,74 @@ const ContactSection = () => {
         </div>
         
         <div className="max-w-2xl mx-auto">
-          {/* Feedback visual do status do envio */}
+          {/* Status de sucesso */}
           {submitStatus === 'success' && (
-            <div className="mb-4 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg">
-              ✅ Formulário enviado com sucesso! Entraremos em contato em breve.
+            <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg text-center animate-fade-in">
+              <div className="text-green-600 text-4xl mb-3">✅</div>
+              <h3 className="text-lg font-semibold text-green-800 mb-2">Formulário enviado com sucesso!</h3>
+              <p className="text-green-700">Seus dados foram registrados e entraremos em contato em breve.</p>
             </div>
           )}
           
+          {/* Status de erro */}
           {submitStatus === 'error' && (
-            <div className="mb-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-              ❌ Erro ao enviar formulário. Tente novamente ou entre em contato via WhatsApp.
+            <div className="mb-6 p-6 bg-red-50 border border-red-200 rounded-lg text-center animate-fade-in">
+              <div className="text-red-600 text-4xl mb-3">❌</div>
+              <h3 className="text-lg font-semibold text-red-800 mb-2">Erro ao enviar formulário</h3>
+              <p className="text-red-700">Tente novamente ou entre em contato via WhatsApp.</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 animate-zoom-in">
-            <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
+          {/* Formulário com loading overlay */}
+          <div className="relative">
+            {/* Loading overlay */}
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-10">
+                <div className="text-center">
+                  <svg className="animate-spin h-12 w-12 text-hinode-primary mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p className="text-hinode-primary font-semibold">Enviando mensagem...</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 animate-zoom-in">
+              <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
+                <div>
+                  <Input
+                    type="text"
+                    name="name"
+                    placeholder="Seu nome completo"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                <div>
+                  <Input
+                    type="tel"
+                    name="phone"
+                    placeholder="Seu telefone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+              
               <div>
                 <Input
-                  type="text"
-                  name="name"
-                  placeholder="Seu nome completo"
-                  value={formData.name}
+                  type="email"
+                  name="email"
+                  placeholder="Seu e-mail"
+                  value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
                   required
@@ -120,63 +156,27 @@ const ContactSection = () => {
               </div>
               
               <div>
-                <Input
-                  type="tel"
-                  name="phone"
-                  placeholder="Seu telefone"
-                  value={formData.phone}
+                <Textarea
+                  name="subject"
+                  placeholder="Conte um pouco sobre você e seus objetivos..."
+                  value={formData.subject}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
+                  className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent resize-none text-base"
+                  rows={5}
                   required
                   disabled={isSubmitting}
                 />
               </div>
-            </div>
-            
-            <div>
-              <Input
-                type="email"
-                name="email"
-                placeholder="Seu e-mail"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent text-base"
-                required
+              
+              <Button 
+                type="submit"
                 disabled={isSubmitting}
-              />
-            </div>
-            
-            <div>
-              <Textarea
-                name="subject"
-                placeholder="Conte um pouco sobre você e seus objetivos..."
-                value={formData.subject}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-hinode-primary/20 rounded-lg focus:ring-2 focus:ring-hinode-primary focus:border-transparent resize-none text-base"
-                rows={5}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-            
-            <Button 
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-hinode-primary hover:bg-hinode-primary/90 text-hinode-navy font-bold py-3 md:py-4 px-6 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-hinode-navy" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Enviando...
-                </>
-              ) : (
-                'Enviar Mensagem'
-              )}
-            </Button>
-          </form>
+                className="w-full bg-hinode-primary hover:bg-hinode-primary/90 text-hinode-navy font-bold py-3 md:py-4 px-6 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Enviando...' : 'Enviar Mensagem'}
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
     </section>

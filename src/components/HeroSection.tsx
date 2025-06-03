@@ -8,7 +8,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-hinode-primary/10 to-hinode-navy/90 px-4 md:px-6 lg:px-8">
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-hinode-primary/10 to-hinode-navy/90 px-6 md:px-8 lg:px-12">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-20"
@@ -57,13 +57,6 @@ const HeroSection = () => {
           </svg>
           Comece Agora no WhatsApp!
         </Button>
-      </div>
-      
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-4 h-6 md:w-6 md:h-10 border-2 border-hinode-primary rounded-full flex justify-center">
-          <div className="w-0.5 h-2 md:w-1 md:h-3 bg-hinode-primary rounded-full mt-1 md:mt-2"></div>
-        </div>
       </div>
     </section>
   );

@@ -1,11 +1,6 @@
 
-/**
- * Google Sheets API Integration
- * Integração com Google Sheets para cadastro de leads usando Service Account
- */
-
-// Configurações da Service Account
-const GOOGLE_SHEETS_CONFIG = {
+// Credenciais da Service Account para autenticação com Google Sheets API
+const SERVICE_ACCOUNT_CREDENTIALS = {
   type: "service_account",
   project_id: "hinode-leads",
   private_key_id: "d32a74efa1a7f11acf1d8497d7e4d40cb603c3a9",
@@ -19,233 +14,148 @@ const GOOGLE_SHEETS_CONFIG = {
   universe_domain: "googleapis.com"
 };
 
-// ID da planilha (configurável)
-const DEFAULT_SPREADSHEET_ID = "1V7q1-JYXX77BrVAWKKzHpuhROvH3n8P1digIxv2lmp4";
-
-// Nome da aba padrão da planilha
-const DEFAULT_SHEET_NAME = "Página1";
-
-// Interface para os dados do formulário
-interface FormData {
-  name: string;
-  phone: string;
-  email: string;
-  subject: string;
-}
-
 /**
- * Gera um JWT (JSON Web Token) para autenticação com Google API
- * Necessário para autenticar usando Service Account
+ * Função para criar um JWT (JSON Web Token) para autenticação com Google API
+ * Utiliza as credenciais da Service Account para gerar token de acesso
  */
-async function generateJWT(): Promise<string> {
-  console.log('🔑 Gerando JWT para autenticação...');
-  
+async function createJWT(): Promise<string> {
   const header = {
-    alg: 'RS256',
-    typ: 'JWT'
+    alg: "RS256",
+    typ: "JWT"
   };
 
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    iss: GOOGLE_SHEETS_CONFIG.client_email,
-    scope: 'https://www.googleapis.com/auth/spreadsheets',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600, // Token válido por 1 hora
+    iss: SERVICE_ACCOUNT_CREDENTIALS.client_email,
+    scope: "https://www.googleapis.com/auth/spreadsheets",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
     iat: now
   };
 
-  // Codifica header e payload em base64
+  // Codifica header e payload em Base64
   const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   
   const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
-  // Importa a chave privada para assinar o token
-  const privateKey = await window.crypto.subtle.importKey(
-    'pkcs8',
-    pemToArrayBuffer(GOOGLE_SHEETS_CONFIG.private_key),
+  // Assina o token usando a chave privada
+  const privateKey = SERVICE_ACCOUNT_CREDENTIALS.private_key;
+  const key = await window.crypto.subtle.importKey(
+    "pkcs8",
+    str2ab(atob(privateKey.replace(/-----BEGIN PRIVATE KEY-----|\n|-----END PRIVATE KEY-----/g, ''))),
     {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256'
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
     },
     false,
-    ['sign']
+    ["sign"]
   );
 
-  // Assina o token
   const signature = await window.crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    privateKey,
+    "RSASSA-PKCS1-v1_5",
+    key,
     new TextEncoder().encode(unsignedToken)
   );
 
   const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 
-  console.log('✅ JWT gerado com sucesso');
   return `${unsignedToken}.${encodedSignature}`;
 }
 
 /**
- * Converte uma chave PEM em ArrayBuffer para uso com Web Crypto API
+ * Função auxiliar para converter string em ArrayBuffer
  */
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const pemContents = pem
-    .replace('-----BEGIN PRIVATE KEY-----', '')
-    .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\s/g, '');
-  
-  const binaryString = atob(pemContents);
-  const bytes = new Uint8Array(binaryString.length);
-  
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+function str2ab(str: string): ArrayBuffer {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
   }
-  
-  return bytes.buffer;
+  return buf;
 }
 
 /**
- * Obtém um access token usando o JWT gerado
- * Necessário para fazer chamadas autenticadas à API do Google Sheets
+ * Função para obter token de acesso usando o JWT
+ * Faz a troca do JWT por um access token válido
  */
 async function getAccessToken(): Promise<string> {
-  console.log('🚀 Obtendo access token...');
-  
-  const jwt = await generateJWT();
-  
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
-  });
+  try {
+    const jwt = await createJWT();
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('❌ Erro na autenticação:', errorData);
-    throw new Error('Falha na autenticação com Google API');
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro na autenticação: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    throw new Error(`Falha na autenticação: ${error}`);
   }
-
-  const data = await response.json();
-  console.log('✅ Access token obtido com sucesso');
-  return data.access_token;
 }
 
 /**
- * Envia dados do formulário para Google Sheets
+ * Função principal para enviar dados do formulário para Google Sheets
  * @param formData - Dados do formulário (nome, telefone, email, assunto)
- * @param spreadsheetId - ID da planilha (opcional, usa o padrão se não fornecido)
- * @param sheetName - Nome da aba da planilha (opcional, usa 'Página1' como padrão)
- * @returns Promise<boolean> - true se envio foi bem-sucedido
+ * @param spreadsheetId - ID da planilha do Google Sheets
+ * @param sheetName - Nome da aba da planilha (padrão: 'Página1')
+ * @returns Promise<boolean> - true se sucesso, false se falha
  */
 export async function sendToGoogleSheets(
-  formData: FormData, 
-  spreadsheetId: string = DEFAULT_SPREADSHEET_ID,
-  sheetName: string = DEFAULT_SHEET_NAME
+  formData: { name: string; phone: string; email: string; subject: string },
+  spreadsheetId: string,
+  sheetName: string = 'Página1'
 ): Promise<boolean> {
   try {
-    console.log('🚀 Iniciando envio para Google Sheets...', formData);
-    console.log('📋 Planilha ID:', spreadsheetId);
-    console.log('📄 Aba:', sheetName);
-    
-    // 1. Obter access token para autenticação
+    // Obter token de acesso
     const accessToken = await getAccessToken();
+    
+    // Preparar dados para envio (formato de matriz bidimensional)
+    const values = [[
+      formData.name,
+      formData.phone,
+      formData.email,
+      formData.subject,
+      new Date().toLocaleString('pt-BR') // Adiciona timestamp
+    ]];
 
-    // 2. Preparar dados para envio
-    // Adiciona timestamp e organiza os dados em formato de linha (matriz bidimensional)
-    const timestamp = new Date().toLocaleString('pt-BR');
-    const rowData = [
-      [timestamp, formData.name, formData.phone, formData.email, formData.subject]
-    ];
-
-    console.log('📊 Dados formatados para envio:', rowData);
-
-    // 3. Configurar URL da API do Google Sheets com range correto
-    // Usa o formato 'NomeAba!A1:append' para adicionar ao final da planilha
+    // Configurar range da planilha (modo append)
     const range = `${sheetName}!A1:append`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
     
-    console.log('🔗 URL da API:', url);
-    console.log('📍 Range:', range);
-
-    // 4. Preparar body da requisição no formato correto
-    const requestBody = {
-      values: rowData
-    };
-
-    console.log('📦 Request Body:', JSON.stringify(requestBody, null, 2));
-    
-    // 5. Fazer requisição para adicionar dados à planilha
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log('📡 Status da resposta:', response.status);
-    console.log('📡 Status text:', response.statusText);
+    // Fazer requisição para Google Sheets API
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: values
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Erro na resposta da API:', errorData);
-      console.error('❌ Headers da resposta:', response.headers);
-      throw new Error(`Erro ao enviar dados: ${response.status} - ${response.statusText}`);
+      throw new Error(`Erro ${response.status}: ${JSON.stringify(errorData)}`);
     }
 
-    const result = await response.json();
-    console.log('✅ Dados enviados com sucesso para Google Sheets:', result);
-    console.log('📊 Resposta completa da API:', JSON.stringify(result, null, 2));
-    
     return true;
-
   } catch (error) {
-    console.error('❌ Erro detalhado ao enviar dados para Google Sheets:', error);
-    return false;
-  }
-}
-
-/**
- * Função auxiliar para testar a conexão com Google Sheets
- * Útil para verificar se as credenciais estão funcionando
- */
-export async function testGoogleSheetsConnection(
-  spreadsheetId: string = DEFAULT_SPREADSHEET_ID
-): Promise<boolean> {
-  try {
-    console.log('🧪 Testando conexão com Google Sheets...');
-    
-    const accessToken = await getAccessToken();
-    
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    console.log('🧪 Status do teste:', response.status);
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Conexão bem-sucedida:', data.properties?.title);
-      return true;
-    } else {
-      const errorData = await response.json();
-      console.error('❌ Erro no teste:', errorData);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Erro ao testar conexão:', error);
     return false;
   }
 }

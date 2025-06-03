@@ -6,6 +6,7 @@ import ProductsSection from '@/components/ProductsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import ContactSection from '@/components/ContactSection';
 import FloatingButtons from '@/components/FloatingButtons';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
       <ProductsSection />
       <TestimonialsSection />
       <ContactSection />
+      <Footer />
       <FloatingButtons />
     </div>
   );
