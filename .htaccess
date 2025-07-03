@@ -1,7 +1,180 @@
-Options -MultiViews
-RewriteEngine On
-RewriteBase /
+# .htaccess MÍNIMO E FUNCIONAL - Substitua seu .htaccess atual por este
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [QSA,L]
+# ============================================================================
+
+# REDIRECIONAMENTOS BÁSICOS
+
+# ============================================================================
+
+RewriteEngine On
+
+# Forçar HTTPS
+
+RewriteCond %{HTTPS} off
+RewriteRule ^(.\*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remover WWW
+
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^(.\*)$ https://%1%{REQUEST_URI} [L,R=301]
+
+# ============================================================================
+
+# TESTE 1: PROTEÇÃO CONTRA SQL INJECTION
+
+# ============================================================================
+
+# Proteção contra SQL injection e XSS básicos
+
+RewriteCond %{QUERY_STRING} union._select [NC,OR]
+RewriteCond %{QUERY_STRING} concat._\( [NC,OR]
+RewriteCond %{QUERY_STRING} (\<|%3C)._script._(\>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} \_REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} (\<|%3C)._iframe._(\>|%3E) [NC]
+RewriteRule ^(.\*)$ - [F,L]
+
+# Bloquear métodos HTTP desnecessários
+
+RewriteCond %{REQUEST_METHOD} ^(HEAD|TRACE|DELETE|TRACK|DEBUG) [NC]
+RewriteRule ^(.\*)$ - [F,L]
+
+# Proteção contra hotlinking
+
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?jhonyhinode\.com\.br [NC]
+RewriteRule \.(jpg|jpeg|png|gif|webp|svg)$ - [F,L]
+
+# Bloquear user agents maliciosos
+
+RewriteCond %{HTTP_USER_AGENT} (binlar|casper|cmsworldmap|comodo|diavol|dotbot) [NC]
+RewriteRule ^(.\*)$ - [F,L]
+
+# ============================================================================
+
+# PROTEÇÃO DE ARQUIVOS ESSENCIAIS
+
+# ============================================================================
+
+# Proteger arquivos sensíveis
+
+<Files ".htaccess">
+Order allow,deny
+Deny from all
+</Files>
+
+<Files ".env">
+Order allow,deny
+Deny from all
+</Files>
+
+<Files "\*.log">
+Order allow,deny
+Deny from all
+</Files>
+
+# ============================================================================
+
+# HEADERS DE SEGURANÇA COMPLETOS
+
+# ============================================================================
+
+<IfModule mod_headers.c>
+    # Headers que você já tem (funcionando)
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # NOVOS HEADERS para melhorar a nota:
+    
+    # HSTS - Força HTTPS por 1 ano
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    
+    # Referrer Policy - Controla informações de referência
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Permissions Policy - Controla APIs do browser
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), fullscreen=(self)"
+    
+    # Content Security Policy - Proteção contra XSS avançada
+    # (versão básica e compatível)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:;"
+    
+    # Remover headers que revelam informações do servidor
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# ============================================================================
+
+# CACHE BÁSICO
+
+# ============================================================================
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+</IfModule>
+
+# ============================================================================
+
+# PÁGINAS DE ERRO
+
+# ============================================================================
+
+ErrorDocument 404 /404.html
+
+# ADIÇÕES ESPECÍFICAS (adicione ao final do modelo se necessário)
+
+# ============================================================================
+
+# PARA WORDPRESS (adicione se o projeto for WordPress)
+
+# ============================================================================
+
+# RewriteRule ^index\.php$ - [L]
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+
+# RewriteCond %{REQUEST_FILENAME} !-d
+
+# RewriteRule . /index.php [L]
+
+# ============================================================================
+
+# PARA SPA (React/Vue/Angular - adicione se for Single Page App)
+
+# ============================================================================
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+
+# RewriteCond %{REQUEST_FILENAME} !-d
+
+# RewriteCond %{REQUEST_URI} !^/webhooks/
+
+# RewriteRule . /index.html [L]
+
+# ============================================================================
+
+# PARA API (adicione se for projeto de API)
+
+# ============================================================================
+
+# Header always set Access-Control-Allow-Origin "\*"
+
+# Header always set Access-Control-Allow-Methods "GET,POST,PUT,DELETE,OPTIONS"
+
+# Header always set Access-Control-Allow-Headers "Content-Type,Authorization"
+
+# ============================================================================
+
+# PARA MÚLTIPLOS DOMÍNIOS (se usar vários domínios no mesmo projeto)
+
+# ============================================================================
+
+# RewriteCond %{HTTP_REFERER} !^https?://(www\.)?(dominio1|dominio2|dominio3)\.(com|com\.br) [NC]

@@ -21,7 +21,7 @@ const BiographySection = () => {
           {/* Coluna da Imagem */}
           <div className="flex justify-center animate-fade-in">
             <img
-              src="/public/fotoJhony.jpg"
+              src="/fotoJhony.jpg"
               alt="Representante Hinode"
               className="w-full max-w-xs md:max-w-sm lg:max-w-md h-auto object-cover rounded-2xl shadow-2xl border-4 border-hinode-primary/20"
             />

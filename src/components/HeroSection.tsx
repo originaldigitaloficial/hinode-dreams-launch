@@ -22,7 +22,7 @@ const HeroSection = () => {
 
   return (
     <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-hinode-primary/10 to-hinode-navy/90 px-6 md:px-8 lg:px-12">
-      {/* Imagem de fundo da Hero */}
+      {/* Imagem de fundo */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-20"
         style={{
@@ -32,8 +32,8 @@ const HeroSection = () => {
       />
 
       {/* Conteúdo central */}
-      <div className="relative z-10 text-center max-w-5xl mx-auto w-full flex flex-col justify-center h-full">
-        <h1 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-hinode-white mb-3 md:mb-4 leading-tight animate-fade-in whitespace-nowrap">
+      <div className="relative z-10 max-w-5xl mx-auto w-full flex flex-col items-center justify-center text-center h-full">
+        <h1 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-hinode-white mb-3 md:mb-4 leading-tight animate-fade-in">
           💎 Desperte Seu Potencial:{" "}
           <span className="text-hinode-primary">Viva de Perfumes Hinode!</span>
         </h1>
@@ -41,7 +41,6 @@ const HeroSection = () => {
         {/* Bloco do vídeo */}
         <div className="mb-4 md:mb-5 animate-zoom-in">
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl mx-auto aspect-video rounded-lg md:rounded-xl overflow-hidden shadow-2xl border-2 md:border-3 border-hinode-primary/50">
-            {/* Vídeo */}
             <video
               ref={videoRef}
               controls={isPlaying}
@@ -49,14 +48,11 @@ const HeroSection = () => {
               className="w-full h-full object-cover"
               preload="metadata"
             >
-              <source
-                src="/public/videoNegocioHinodeJhony.mp4"
-                type="video/mp4"
-              />
+              <source src="/videoNegocioHinodeJhony.mp4" type="video/mp4" />
               Seu navegador não suporta vídeo HTML5.
             </video>
 
-            {/* Overlay clicável */}
+            {/* Overlay antes de tocar */}
             {!isPlaying && (
               <div
                 className="absolute inset-0 bg-gradient-to-br from-hinode-primary/60 to-hinode-navy/70 flex flex-col items-center justify-center cursor-pointer"
@@ -95,7 +91,6 @@ const HeroSection = () => {
           className="bg-hinode-success hover:bg-hinode-success/90 text-hinode-white text-xs md:text-sm px-4 md:px-6 py-2 md:py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl mx-auto flex items-center justify-center gap-2"
           size="lg"
         >
-          {/* Ícone WhatsApp */}
           <svg
             className="w-4 h-4 md:w-5 md:h-5"
             fill="currentColor"
