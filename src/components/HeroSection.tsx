@@ -45,10 +45,14 @@ const HeroSection = () => {
               ref={videoRef}
               controls={isPlaying}
               playsInline
+              poster="/banner.png"
               className="w-full h-full object-cover"
               preload="metadata"
+              onError={() => console.log("Erro ao carregar vídeo")}
+              onLoadedData={() => console.log("Vídeo carregado com sucesso")}
             >
               <source src="/videoNegocioHinodeJhony.mp4" type="video/mp4" />
+              <source src="/videoNegocioHinode2.mp4" type="video/mp4" />
               Seu navegador não suporta vídeo HTML5.
             </video>
 
